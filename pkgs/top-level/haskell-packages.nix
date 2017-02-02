@@ -68,21 +68,29 @@ in rec {
     ghc7103 = callPackage ../development/compilers/ghc/7.10.3.nix rec {
       bootPkgs = packages.ghc7103Binary;
       inherit (bootPkgs) hscolour;
+      buildLlvmPackages = buildPackages.llvmPackages_35;
+      llvmPackages = pkgs.llvmPackages_35;
     };
     ghc802 = callPackage ../development/compilers/ghc/8.0.2.nix rec {
       bootPkgs = packages.ghc7103Binary;
       inherit (bootPkgs) hscolour;
       sphinx = pkgs.python27Packages.sphinx;
+      buildLlvmPackages = buildPackages.llvmPackages_37;
+      llvmPackages = pkgs.llvmPackages_37;
     };
     ghc822 = callPackage ../development/compilers/ghc/8.2.2.nix rec {
       bootPkgs = packages.ghc821Binary;
       inherit (bootPkgs) hscolour alex happy;
       inherit buildPlatform targetPlatform;
       sphinx = pkgs.python3Packages.sphinx;
+      buildLlvmPackages = buildPackages.llvmPackages_39;
+      llvmPackages = pkgs.llvmPackages_39;
     };
     ghcHEAD = callPackage ../development/compilers/ghc/head.nix rec {
       bootPkgs = packages.ghc821Binary;
       inherit (bootPkgs) alex happy;
+      buildLlvmPackages = buildPackages.llvmPackages_5;
+      llvmPackages = pkgs.llvmPackages_5;
     };
     ghcjs = packages.ghc7103.callPackage ../development/compilers/ghcjs {
       bootPkgs = packages.ghc821Binary;
