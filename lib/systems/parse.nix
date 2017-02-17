@@ -173,6 +173,7 @@ rec {
   types.abi = enum (attrValues abis);
 
   abis = setTypes types.openAbi {
+    android = {};
     cygnus = {};
     gnu = {};
     msvc = {};
