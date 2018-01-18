@@ -68,4 +68,9 @@ self: super: {
   # inline-c > 0.5.6.0 requires template-haskell >= 2.12
   inline-c = super.inline-c_0_5_6_1;
   inline-c-cpp = super.inline-c-cpp_0_1_0_0;
+
+  # Newer versions require Cabal-2.0, and overrideScope is
+  # inappropriate for libraries.
+  haddock-api = self.haddock-api_2_17_4;
+  haddock = self.callHackage "haddock" "2.17.4" {};
 }
