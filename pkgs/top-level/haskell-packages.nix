@@ -1,6 +1,7 @@
 { buildPackages, pkgs
 , newScope, stdenv
 , buildPlatform, targetPlatform
+, cabal-install
 }:
 
 let
@@ -99,10 +100,12 @@ in rec {
       llvmPackages = pkgs.llvmPackages_5;
     };
     ghcjs = packages.ghc7103.callPackage ../development/compilers/ghcjs {
-      bootPkgs = packages.ghc821Binary;
+      bootPkgs = packages.ghc7103;
+      inherit cabal-install;
     };
     ghcjsHEAD = packages.ghc802.callPackage ../development/compilers/ghcjs/head.nix {
-      bootPkgs = packages.ghc821Binary;
+      bootPkgs = packages.ghc802;
+      inherit cabal-install;
     };
     ghcHaLVM240 = callPackage ../development/compilers/halvm/2.4.0.nix rec {
       bootPkgs = packages.ghc7103Binary;
