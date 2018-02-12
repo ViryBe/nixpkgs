@@ -15,7 +15,9 @@
 
 , # If enabled, GHC will be built with the GPL-free but slower integer-simple
   # library instead of the faster but GPLed integer-gmp library.
-  enableIntegerSimple ? false, gmp ? null
+  enableIntegerSimple ? targetPlatform.useAndroidPrebuilt or false
+                     || targetPlatform.useIosPrebuilt or false
+, gmp ? null
 
 , # If enabled, use -fPIC when compiling static libs.
   enableRelocatedStaticLibs ? targetPlatform != hostPlatform
@@ -50,7 +52,11 @@ let
   '' + stdenv.lib.optionalString enableRelocatedStaticLibs ''
     GhcLibHcOpts += -fPIC
     GhcRtsHcOpts += -fPIC
+  '' + stdenv.lib.optionalString prebuiltAndroidTarget ''
+    EXTRA_CC_OPTS += -std=gnu99
   '';
+
+  prebuiltAndroidTarget = targetPlatform.useAndroidPrebuilt or false;
 
   # Splicer will pull out correct variations
   libDeps = platform: [ ncurses ]
@@ -66,7 +72,7 @@ let
   targetCC = builtins.head toolsForTarget;
 
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (rec {
   inherit version;
   inherit (src) rev;
   name = "${targetPrefix}ghc-${version}";
@@ -80,6 +86,12 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   outputs = [ "out" "doc" ];
+
+  patches = stdenv.lib.optionals prebuiltAndroidTarget [
+    ./android-patches/unix-posix_vdisable.patch
+    ./android-patches/force_CC_SUPPORTS_TLS_equal_zero.patch
+    ./android-patches/undefine_MYTASK_USE_TLV_for_CC_SUPPORTS_TLS_zero.patch
+  ];
 
   postPatch = "patchShebangs .";
 
@@ -190,4 +202,13 @@ stdenv.mkDerivation rec {
     inherit (ghc.meta) license platforms;
   };
 
-}
+} // stdenv.lib.optionalAttrs prebuiltAndroidTarget {
+  # It gets confused with ncurses
+  dontPatchELF = prebuiltAndroidTarget;
+
+  # It uses the native strip on libraries too
+  dontStrip = prebuiltAndroidTarget;
+
+  # Hack so we can get away with not stripping and patching.
+  noAuditTmpdir = prebuiltAndroidTarget;
+})

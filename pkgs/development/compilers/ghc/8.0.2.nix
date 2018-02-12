@@ -27,6 +27,10 @@
 
 assert !enableIntegerSimple -> gmp != null;
 
+# TODO(@Ericson2314,@ElvishJerricco)
+assert !(targetPlatform.useAndroidPrebuilt or false
+         || targetPlatform.useIosPrebuilt or false);
+
 let
   inherit (bootPkgs) ghc;
 

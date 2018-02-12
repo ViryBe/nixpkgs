@@ -15,7 +15,9 @@
 
 , # If enabled, GHC will be built with the GPL-free but slower integer-simple
   # library instead of the faster but GPLed integer-gmp library.
-  enableIntegerSimple ? false, gmp ? null
+  enableIntegerSimple ? targetPlatform.useAndroidPrebuilt or false
+                     || targetPlatform.useIosPrebuilt or false
+, gmp ? null
 
 , # If enabled, use -fPIC when compiling static libs.
   enableRelocatedStaticLibs ? targetPlatform != hostPlatform
@@ -51,7 +53,11 @@ let
   '' + stdenv.lib.optionalString enableRelocatedStaticLibs ''
     GhcLibHcOpts += -fPIC
     GhcRtsHcOpts += -fPIC
+  '' + stdenv.lib.optionalString prebuiltAndroidTarget ''
+    EXTRA_CC_OPTS += -std=gnu99
   '';
+
+  prebuiltAndroidTarget = targetPlatform.useAndroidPrebuilt or false;
 
   # Splicer will pull out correct variations
   libDeps = platform: [ ncurses ]
@@ -67,7 +73,7 @@ let
   targetCC = builtins.head toolsForTarget;
 
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (rec {
   version = "8.2.2";
   name = "${targetPrefix}ghc-${version}";
 
@@ -85,7 +91,18 @@ stdenv.mkDerivation rec {
       url = "https://git.haskell.org/ghc.git/commitdiff_plain/2fc8ce5f0c8c81771c26266ac0b150ca9b75c5f3";
       sha256 = "03253ci40np1v6k0wmi4aypj3nmj3rdyvb1k6rwqipb30nfc719f";
     })
-  ];
+  ] ++ stdenv.lib.optionals (targetPlatform != hostPlatform) [
+    ./D4008-backport-rendered.diff
+  ] ++ stdenv.lib.optionals prebuiltAndroidTarget [
+    ./android-patches/add-llvm-target-data-layout.patch
+    ./android-patches/unix-posix_vdisable.patch
+    ./android-patches/force_CC_SUPPORTS_TLS_equal_zero.patch
+    ./android-patches/undefine_MYTASK_USE_TLV_for_CC_SUPPORTS_TLS_zero.patch
+    ./android-patches/force-relocation-equal-pic.patch
+    ./android-patches/rts_android_log_write.patch
+  ] ++ stdenv.lib.optional (with targetPlatform; (isDarwin && (isAarch64 || isArm)))
+      ./ios-rump-linker.patch
+  ;
 
   postPatch = "patchShebangs .";
 
@@ -193,4 +210,13 @@ stdenv.mkDerivation rec {
     inherit (ghc.meta) license platforms;
   };
 
-}
+} // stdenv.lib.optionalAttrs prebuiltAndroidTarget {
+  # It gets confused with ncurses
+  dontPatchELF = prebuiltAndroidTarget;
+
+  # It uses the native strip on libraries too
+  dontStrip = prebuiltAndroidTarget;
+
+  # Hack so we can get away with not stripping and patching.
+  noAuditTmpdir = prebuiltAndroidTarget;
+})
