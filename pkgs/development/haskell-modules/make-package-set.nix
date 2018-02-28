@@ -146,16 +146,14 @@ in package-set { inherit pkgs stdenv callPackage; } self // {
 
     # Creates a Haskell package from a source package by calling cabal2nix on the source.
     callCabal2nix = name: src: args:
-      overrideCabal (self.callPackage (haskellSrc2nix {
+      let filter = path: type:
+            pkgs.lib.hasSuffix "${name}.cabal" path ||
+            pkgs.lib.hasSuffix "package.yaml" path;
+      in overrideCabal (self.callPackage (haskellSrc2nix {
         inherit name;
-        src = pkgs.lib.cleanSourceWith
-          { src = if pkgs.lib.canCleanSource src
-                    then src
-                    else pkgs.safeDiscardStringContext src;
-            filter = path: type:
-              pkgs.lib.hasSuffix "${name}.cabal" path ||
-              pkgs.lib.hasSuffix "package.yaml" path;
-          };
+        src = if pkgs.lib.canCleanSource src
+                then pkgs.lib.cleanSourceWith { inherit src filter; }
+              else src;
       }) args) (_: { inherit src; });
 
     # : { root : Path
