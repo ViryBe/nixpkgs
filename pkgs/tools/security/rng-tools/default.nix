@@ -9,6 +9,8 @@ stdenv.mkDerivation rec {
     sha256 = "13h7lc8wl9khhvkr0i3bl5j9bapf8anhqis1lcnwxg1vc2v058b0";
   };
 
+  buildFlags = ["AR=${stdenv.cc.targetPrefix}ar"];
+
   meta = {
     description = "A random number generator daemon";
 
