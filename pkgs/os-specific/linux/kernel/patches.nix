@@ -57,5 +57,11 @@ rec {
       sha256 = "1l8xq02rd7vakxg52xm9g4zng0ald866rpgm8kjlh88mwwyjkrwv";
     };
   };
+  
+  bcm2835_audio = rec {
+     name = "bcm2835_audio";
+     patch = ./raspberry-pi-audio.patch;
+   };
+  
 
 }
